@@ -84,6 +84,21 @@ module mojo_top_0 (
   reg M_redcount_d, M_redcount_q = 1'h0;
   reg M_greencount_d, M_greencount_q = 1'h0;
   
+  wire [16-1:0] M_myAlu_fout;
+  wire [3-1:0] M_myAlu_error;
+  wire [1-1:0] M_myAlu_overflow;
+  reg [16-1:0] M_myAlu_a;
+  reg [16-1:0] M_myAlu_b;
+  reg [6-1:0] M_myAlu_alufn;
+  alu_6 myAlu (
+    .a(M_myAlu_a),
+    .b(M_myAlu_b),
+    .alufn(M_myAlu_alufn),
+    .fout(M_myAlu_fout),
+    .error(M_myAlu_error),
+    .overflow(M_myAlu_overflow)
+  );
+  
   always @* begin
     M_lose_d = M_lose_q;
     M_doilose_d = M_doilose_q;
@@ -104,7 +119,7 @@ module mojo_top_0 (
     M_dec_ctr_inc = M_activation_q;
     M_seg_values = M_dec_ctr_digits;
     io_seg = ~M_seg_seg;
-    io_sel = ~M_seg_sel;
+    io_sel = M_seg_sel;
     io_led = io_dip;
     M_dec_ctr_resetSignal = 1'h0;
     M_dec_ctr_digitsOverride[0+3-:4] = 1'h0;
@@ -141,6 +156,13 @@ module mojo_top_0 (
     io_led[8+7-:8] = 8'h00;
     io_led[16+7-:8] = 8'h00;
     M_seven_check_d[0+0-:1] = M_dec_ctr_digits[0+3-:4] == 3'h7 || M_dec_ctr_digits[4+3-:4] == 3'h7 || M_dec_ctr_digits[8+3-:4] == 3'h7 || M_dec_ctr_digits[12+3-:4] == 3'h7;
+    M_myAlu_alufn = 6'h00;
+    M_myAlu_a = M_dec_ctr_digits[0+3-:4];
+    M_myAlu_b = M_dec_ctr_digits[4+3-:4] * 4'ha;
+    M_myAlu_a = M_myAlu_fout;
+    M_myAlu_b = M_dec_ctr_digits[8+3-:4] * 7'h64;
+    M_myAlu_a = M_myAlu_fout;
+    M_myAlu_b = M_dec_ctr_digits[12+3-:4] * 10'h3e8;
     
     case (M_dec_ctr_digits[0+3-:4] + M_dec_ctr_digits[4+3-:4] * 4'ha + M_dec_ctr_digits[8+3-:4] * 7'h64 + M_dec_ctr_digits[12+3-:4] * 10'h3e8)
       1'h1: begin
@@ -253,7 +275,7 @@ module mojo_top_0 (
       end
     endcase
     
-    case (M_dec_ctr_digits[0+3-:4] + M_dec_ctr_digits[4+3-:4] * 4'ha + M_dec_ctr_digits[8+3-:4] * 7'h64 + M_dec_ctr_digits[12+3-:4] * 10'h3e8)
+    case (M_myAlu_fout)
       3'h7: begin
         M_seven_check_d[1+0-:1] = 1'h1;
       end
@@ -318,7 +340,7 @@ module mojo_top_0 (
       end
     endcase
     
-    case (M_dec_ctr_digits[0+3-:4] + M_dec_ctr_digits[4+3-:4] * 4'ha + M_dec_ctr_digits[8+3-:4] * 7'h64 + M_dec_ctr_digits[12+3-:4] * 10'h3e8)
+    case (M_myAlu_fout)
       2'h3: begin
         M_redcount_d = 1'h0;
         M_greencount_d = 1'h0;
